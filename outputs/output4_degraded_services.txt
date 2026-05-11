@@ -1,0 +1,5 @@
+search-service, high slow request rate
+order-service, repeated timeout errors
+payment-service, high slow request rate
+notification-service, repeated timeout errors
+auth-service, repeated timeout errors
