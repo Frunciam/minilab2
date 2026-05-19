@@ -1,6 +1,11 @@
-"""MapReduce Job 2: Server error count (500) by service"""
+"""MapReduce Job 2: Server error count (status_code >= 500) by service"""
 import os
+import sys
 from collections import defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from utils.s3_reader import read_csv_from_s3
 
 
@@ -14,8 +19,8 @@ def main():
 
     data = read_csv_from_s3()
 
-    # Map phase: emit (service_name, 1) only for 500 errors
-    mapped = [(row['service_name'], 1) for row in data if row['status_code'] == '500']
+    # Map phase: emit (service_name, 1) only for server errors
+    mapped = [(row['service_name'], 1) for row in data if int(row['status_code']) >= 500]
 
     # Reduce phase: sum errors per service
     result = defaultdict(int)

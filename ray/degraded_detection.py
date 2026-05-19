@@ -3,9 +3,22 @@ import csv
 from io import StringIO
 from collections import defaultdict
 import os
+import sys
 import time
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+for path in ("", str(PROJECT_ROOT), str(SCRIPT_DIR)):
+    if path in sys.path:
+        sys.path.remove(path)
+
 import ray
-from utils.s3_reader import BUCKET_NAME, FILE_KEY, REGION, get_s3_client
+
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from utils.s3_reader import read_csv_lines_from_s3
 
 
 NUM_PARALLEL_TASKS = 4
@@ -17,13 +30,8 @@ def ensure_output_dir():
 
 
 def get_data_shards():
-    """Read data from S3 and split into shards"""
-    s3 = get_s3_client()
-    obj = s3.get_object(Bucket=BUCKET_NAME, Key=FILE_KEY)
-    content = obj['Body'].read().decode('utf-8')
-    lines = content.splitlines()
-    header = lines[0]
-    data_lines = lines[1:]
+    """Read data from S3 or local fallback and split it into shards."""
+    header, data_lines = read_csv_lines_from_s3()
 
     chunk_size = len(data_lines) // NUM_PARALLEL_TASKS
     shards = []
@@ -57,8 +65,8 @@ def process_shard(shard_content):
         if int(row['response_time_ms']) > 800:
             stats[service]['slow'] += 1
 
-        # Server error: status_code = 500
-        if row['status_code'] == '500':
+        # Server error: status_code >= 500
+        if int(row['status_code']) >= 500:
             stats[service]['server_error'] += 1
 
         # Timeout error

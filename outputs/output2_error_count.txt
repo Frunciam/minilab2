@@ -1,5 +1,5 @@
-payment-service 619
-search-service 388
-order-service 342
-notification-service 201
-auth-service 197
+payment-service 1362
+search-service 904
+order-service 717
+notification-service 436
+auth-service 436
